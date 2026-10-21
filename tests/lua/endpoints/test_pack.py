@@ -404,6 +404,30 @@ class TestPackEndpointSelection:
         assert "pack" not in after_second
 
 
+    def test_pack_celestial_black_hole_first(self, client: httpx.Client) -> None:
+        """Test selecting Black Hole when it is the first card of a Celestial pack.
+
+        Black Hole is a Spectral card, but Celestial packs never deal a hand,
+        so pack must not wait for one (coder/balatrobot#199).
+        """
+        load_fixture(
+            client,
+            "pack",
+            "seed-S001250--state-SMODS_BOOSTER_OPENED--pack.cards[0].key-c_black_hole",
+        )
+        before = api(client, "gamestate", {})["result"]
+        assert before["pack"]["cards"][0]["key"] == "c_black_hole"
+
+        result = api(client, "pack", {"card": 0})
+        after = assert_gamestate_response(result, state="SHOP")
+
+        # Black Hole levels up ALL hands by 1
+        for hand_name in before["hands"]:
+            assert (
+                after["hands"][hand_name]["level"]
+                == before["hands"][hand_name]["level"] + 1
+            )
+
 # =============================================================================
 # Mega Pack Multi-Selection Tests
 # =============================================================================

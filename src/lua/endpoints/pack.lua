@@ -303,13 +303,11 @@ return {
       return
     end
 
-    -- Wait for hand cards to load for Arcana and Spectral packs
-    local pack_key = G.pack_cards
-      and G.pack_cards.cards
-      and G.pack_cards.cards[1]
-      and G.pack_cards.cards[1].ability
-      and G.pack_cards.cards[1].ability.set
-    local needs_hand = pack_key == "Tarot" or pack_key == "Spectral"
+    -- Wait for hand cards to load for Arcana and Spectral packs. Use the
+    -- opened booster, not its first card: a Celestial pack can contain
+    -- Black Hole (a Spectral card) but never deals a hand.
+    local booster = SMODS.OPENED_BOOSTER
+    local needs_hand = booster and booster.config.center.draw_hand == true
 
     if needs_hand then
       -- Wait for hand cards to be fully loaded and positioned

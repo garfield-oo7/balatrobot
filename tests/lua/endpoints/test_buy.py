@@ -196,6 +196,22 @@ class TestBuyEndpoint:
         assert gamestate["pack"] is not None
         assert len(gamestate["pack"]["cards"]) > 0
 
+    def test_buy_celestial_pack_black_hole_first(self, client: httpx.Client) -> None:
+        """Test buying a Celestial pack whose first card is Black Hole.
+
+        Black Hole is a Spectral card, but Celestial packs never deal a hand,
+        so buy must not wait for one (coder/balatrobot#199).
+        """
+        gamestate = load_fixture(
+            client,
+            "buy",
+            "seed-S001250--state-SHOP--packs.cards[1].key-p_celestial_normal_1",
+        )
+        assert gamestate["packs"]["cards"][1]["key"] == "p_celestial_normal_1"
+        response = api(client, "buy", {"pack": 1})
+        gamestate = assert_gamestate_response(response, state="SMODS_BOOSTER_OPENED")
+        assert gamestate["pack"]["cards"][0]["key"] == "c_black_hole"
+
     def test_buy_with_credit_card_joker(self, client: httpx.Client) -> None:
         """Test buying when player has Credit Card joker (can go negative)."""
         # Get to shop state with $0
