@@ -136,12 +136,8 @@ return {
           done = G.hand ~= nil
         end
 
-        if G.STATE == G.STATES.ROUND_EVAL and G.round_eval then
-          for _, b in ipairs(G.I.UIBOX) do
-            if b:get_UIE_by_ID("cash_out_button") then
-              done = true
-            end
-          end
+        if G.STATE == G.STATES.ROUND_EVAL then
+          done = BB_GAMESTATE.round_eval_complete()
         end
 
         if G.STATE == G.STATES.SHOP then

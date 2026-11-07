@@ -818,6 +818,31 @@ function gamestate.get_gamestate()
 end
 
 -- ==========================================================================
+-- Round Evaluation Completion
+-- ==========================================================================
+
+---Check whether the current round evaluation has finished computing its payout
+---
+---The game creates the Cash Out button UIBox and stores the round total in
+---G.GAME.current_round.dollars in the same event (the "bottom" eval row), and
+---G.FUNCS.cash_out pays G.GAME.current_round.dollars. The button UIBox is not
+---a child of G.round_eval, so removing the panel on cash out leaves the old
+---button in G.I.UIBOX for the rest of the run. Only a button whose major is
+---the current G.round_eval means this round's total has been stored.
+---@return boolean complete True if this round's cash out total is final
+function gamestate.round_eval_complete()
+  if not G.round_eval then
+    return false
+  end
+  for _, box in ipairs(G.I.UIBOX) do
+    if box.config and box.config.major == G.round_eval and box:get_UIE_by_ID("cash_out_button") then
+      return true
+    end
+  end
+  return false
+end
+
+-- ==========================================================================
 -- GAME_OVER Callback Support
 -- ==========================================================================
 
