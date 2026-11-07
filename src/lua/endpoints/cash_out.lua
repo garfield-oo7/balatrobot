@@ -25,7 +25,6 @@ return {
   ---@param send_response fun(response: Response.Endpoint)
   execute = function(_, send_response)
     sendDebugMessage("Init cash_out()", "BB.ENDPOINTS")
-    G.FUNCS.cash_out({ config = {} })
 
     local num_items = function(area)
       local count = 0
@@ -40,20 +39,40 @@ return {
     end
 
     -- Wait for SHOP state after state transition completes
+    local function wait_for_shop()
+      G.E_MANAGER:add_event(Event({
+        trigger = "condition",
+        blocking = false,
+        func = function()
+          local done = false
+          if G.STATE == G.STATES.SHOP and G.STATE_COMPLETE then
+            done = num_items(G.shop_booster) > 0 or num_items(G.shop_jokers) > 0 or num_items(G.shop_vouchers) > 0
+            if done then
+              sendDebugMessage("Return cash_out() - reached SHOP state", "BB.ENDPOINTS")
+              send_response(BB_GAMESTATE.get_gamestate())
+              return done
+            end
+          end
+          return done
+        end,
+      }))
+    end
+
+    -- Wait until the round evaluation has stored this round's total in
+    -- G.GAME.current_round.dollars (the game shows the Cash Out button at the
+    -- same moment). G.FUNCS.cash_out pays that value immediately, so calling
+    -- it earlier pays the previous round's total.
     G.E_MANAGER:add_event(Event({
       trigger = "condition",
       blocking = false,
       func = function()
-        local done = false
-        if G.STATE == G.STATES.SHOP and G.STATE_COMPLETE then
-          done = num_items(G.shop_booster) > 0 or num_items(G.shop_jokers) > 0 or num_items(G.shop_vouchers) > 0
-          if done then
-            sendDebugMessage("Return cash_out() - reached SHOP state", "BB.ENDPOINTS")
-            send_response(BB_GAMESTATE.get_gamestate())
-            return done
-          end
+        if G.STATE ~= G.STATES.ROUND_EVAL or not BB_GAMESTATE.round_eval_complete() then
+          return false
         end
-        return done
+        sendDebugMessage("cash_out() - round evaluation complete, cashing out", "BB.ENDPOINTS")
+        G.FUNCS.cash_out({ config = {} })
+        wait_for_shop()
+        return true
       end,
     }))
   end,
