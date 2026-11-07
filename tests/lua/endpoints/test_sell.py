@@ -170,6 +170,25 @@ class TestSellEndpointValidation:
         )
 
 
+class TestSellInOpenPack:
+    """Selling a joker while a Buffoon pack is open makes room for a pick."""
+
+    def test_sell_joker_in_SMODS_BOOSTER_OPENED_then_pick(self, client: httpx.Client) -> None:
+        before = load_fixture(
+            client,
+            "pack",
+            "state-SMODS_BOOSTER_OPENED--pack.type-buffoon--jokers.count-5",
+        )
+        assert before["state"] == "SMODS_BOOSTER_OPENED"
+        assert before["jokers"]["count"] == 5
+        sold = assert_gamestate_response(api(client, "sell", {"joker": 0}))
+        assert sold["state"] == "SMODS_BOOSTER_OPENED"
+        assert sold["jokers"]["count"] == 4
+        assert sold["money"] > before["money"]
+        picked = assert_gamestate_response(api(client, "pack", {"card": 0}))
+        assert picked["jokers"]["count"] == 5
+
+
 class TestSellEndpointStateRequirements:
     """Test sell endpoint state requirements."""
 
@@ -180,7 +199,7 @@ class TestSellEndpointStateRequirements:
         assert_error_response(
             api(client, "sell", {}),
             "INVALID_STATE",
-            "Method 'sell' requires one of these states: SELECTING_HAND, SHOP",
+            "Method 'sell' requires one of these states: SELECTING_HAND, SHOP, SMODS_BOOSTER_OPENED",
         )
 
     def test_sell_from_ROUND_EVAL(self, client: httpx.Client) -> None:
@@ -190,5 +209,5 @@ class TestSellEndpointStateRequirements:
         assert_error_response(
             api(client, "sell", {}),
             "INVALID_STATE",
-            "Method 'sell' requires one of these states: SELECTING_HAND, SHOP",
+            "Method 'sell' requires one of these states: SELECTING_HAND, SHOP, SMODS_BOOSTER_OPENED",
         )
