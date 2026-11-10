@@ -207,7 +207,20 @@ function BB_DISPATCHER.dispatch(request)
   end
 
   -- TIER 4: Execute Endpoint
+  -- The request this reply belongs to. An endpoint that finishes after its
+  -- client timed out must not answer the NEXT request (server.send_response
+  -- writes to the current socket with the current id), or every later reply
+  -- is shifted by one (pass 5 C-on N64: a late play reply answered the
+  -- following call and cash_out then hit INVALID_STATE).
+  local request_id = request.id
   local function send_response(response)
+    if BB_DISPATCHER.Server and BB_DISPATCHER.Server.current_request_id ~= request_id then
+      sendWarnMessage(
+        string.format("%s: dropped a late reply (its request %s is no longer current)", request.method, tostring(request_id)),
+        "BB.DISPATCHER"
+      )
+      return
+    end
     if BB_DISPATCHER.Server then
       -- Log response with timing
       local duration_ms = (socket.gettime() - start_time) * 1000
