@@ -103,6 +103,12 @@ return {
     local initial_money = G.GAME.dollars
     local expected_money = initial_money + card.sell_cost
     local card_id = card.sort_id
+    -- Invisible Joker copies a joker as it is sold, so the joker count does not drop
+    local keeps_count = sell_type == "joker" and card.ability and card.ability.name == "Invisible Joker"
+    -- Vanilla Card:sell_card queues G.GAME.blind:disable() when a joker is sold
+    -- while the blind is Verdant Leaf (same test); wait for it so the reply
+    -- does not carry the old debuffs
+    local verdant = sell_type == "joker" and G.GAME.blind and G.GAME.blind.name == "Verdant Leaf"
 
     -- Log what we're selling
     local item_name = card.ability and card.ability.name or "Unknown"
@@ -129,6 +135,7 @@ return {
 
         -- 1. Card count decreased by 1
         local count_decreased = (current_area.config.card_count == initial_count - 1)
+          or (keeps_count and current_area.config.card_count == initial_count)
 
         -- 2. Money increased by sell_cost
         local money_increased = (G.GAME.dollars == expected_money)
@@ -153,7 +160,10 @@ return {
         )
 
         -- All conditions must be met
-        if count_decreased and money_increased and card_gone and state_stable and valid_state then
+        -- 6. Verdant Leaf switched off (pass 5: A1 N20 saw stale debuffs)
+        local blind_settled = (not verdant) or (G.GAME.blind and G.GAME.blind.disabled == true)
+
+        if count_decreased and money_increased and card_gone and state_stable and valid_state and blind_settled then
           sendDebugMessage("Return sell()", "BB.ENDPOINTS")
           send_response(BB_GAMESTATE.get_gamestate())
           return true

@@ -129,9 +129,13 @@ return {
       return
     end
 
+    -- A Negative card brings its own slot (vanilla check_for_buy_space adds the
+    -- card's card_limit; SMODS gives the Negative edition card_limit = 1)
+    local negative = (card.modifier and card.modifier.edition == "NEGATIVE") and 1 or 0
+
     -- Ensure there is space in joker area
     if card.set == "JOKER" then
-      if gamestate.jokers.count >= gamestate.jokers.limit then
+      if gamestate.jokers.count >= gamestate.jokers.limit + negative then
         send_response({
           message = "Cannot purchase joker card, joker slots are full. Current: "
             .. gamestate.jokers.count
@@ -145,7 +149,7 @@ return {
 
     -- Ensure there is space in consumable area
     if card.set == "PLANET" or card.set == "SPECTRAL" or card.set == "TAROT" then
-      if gamestate.consumables.count >= gamestate.consumables.limit then
+      if gamestate.consumables.count >= gamestate.consumables.limit + negative then
         send_response({
           message = "Cannot purchase consumable card, consumable slots are full. Current: "
             .. gamestate.consumables.count
