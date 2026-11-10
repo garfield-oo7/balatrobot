@@ -77,6 +77,9 @@ BB_SERVER = {
   server_socket = nil,
   client_socket = nil,
   current_request_id = nil,
+  -- Bumped on every accept and close: a reply is valid only on the connection
+  -- that was current when its request was dispatched (pass 5)
+  connection_gen = 0,
   client_state = nil,
   openrpc_spec = nil,
 }
@@ -158,6 +161,7 @@ function BB_SERVER.accept()
     end
 
     client:settimeout(0)
+    BB_SERVER.connection_gen = BB_SERVER.connection_gen + 1
     BB_SERVER.client_socket = client
     BB_SERVER.client_state = new_client_state()
     sendDebugMessage("Client connected", "BB.SERVER")
@@ -169,6 +173,7 @@ end
 
 --- Close current client connection
 local function close_client()
+  BB_SERVER.connection_gen = BB_SERVER.connection_gen + 1
   if BB_SERVER.client_socket then
     BB_SERVER.client_socket:close()
     BB_SERVER.client_socket = nil

@@ -207,16 +207,17 @@ function BB_DISPATCHER.dispatch(request)
   end
 
   -- TIER 4: Execute Endpoint
-  -- The request this reply belongs to. An endpoint that finishes after its
-  -- client timed out must not answer the NEXT request (server.send_response
-  -- writes to the current socket with the current id), or every later reply
-  -- is shifted by one (pass 5 C-on N64: a late play reply answered the
-  -- following call and cash_out then hit INVALID_STATE).
-  local request_id = request.id
+  -- server.send_response writes to the CURRENT socket with the CURRENT id. A
+  -- network request's reply is valid only on the connection it came in on: an
+  -- endpoint that finishes after its client timed out (pass 5 C-on N64: a 30 s+
+  -- play) must not answer a later connection, or every later reply is shifted.
+  -- The server bumps connection_gen on every accept and close. Console requests
+  -- (debugger, no id) keep the old behaviour.
+  local gen = BB_DISPATCHER.Server and BB_DISPATCHER.Server.connection_gen
   local function send_response(response)
-    if BB_DISPATCHER.Server and BB_DISPATCHER.Server.current_request_id ~= request_id then
+    if request.id ~= nil and BB_DISPATCHER.Server and BB_DISPATCHER.Server.connection_gen ~= gen then
       sendWarnMessage(
-        string.format("%s: dropped a late reply (its request %s is no longer current)", request.method, tostring(request_id)),
+        string.format("%s: dropped a late reply (its connection is gone)", request.method),
         "BB.DISPATCHER"
       )
       return
