@@ -56,6 +56,7 @@
 ---@field score integer Score requirement to beat this blind
 ---@field tag_name string? Name of the tag associated with this blind (Small/Big only)
 ---@field tag_effect string? Description of the tag's effect (Small/Big only)
+---@field disabled boolean? Boss only: true while this boss is the current blind and has been disabled (e.g. a Joker sold under Verdant Leaf)
 
 ---@class Area
 ---@field count integer Current number of cards in this area

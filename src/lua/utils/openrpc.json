@@ -1112,6 +1112,10 @@
           "tag_effect": {
             "type": "string",
             "description": "Description of the tag's effect (Small/Big only)"
+          },
+          "disabled": {
+            "type": "boolean",
+            "description": "Boss only: true while this boss is the current blind and has been disabled (e.g. a Joker sold under Verdant Leaf); false otherwise"
           }
         },
         "required": [

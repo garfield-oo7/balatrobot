@@ -165,6 +165,7 @@ class TestGamestateBlinds:
                 "tag_effect": "",
                 "tag_name": "",
                 "type": "BOSS",
+                "disabled": False,
             },
         }
         actual_blinds = {
@@ -199,6 +200,18 @@ class TestGamestateBlinds:
         assert gamestate["blinds"]["small"]["status"] == "SKIPPED"
         assert gamestate["blinds"]["big"]["status"] == "SKIPPED"
         assert gamestate["blinds"]["boss"]["status"] == "SELECT"
+
+    def test_boss_disabled_live_state(self, client: httpx.Client) -> None:
+        """Boss `disabled` is false in the boss blind, true once it is disabled (Chicot)."""
+        fixture_name = "state-BLIND_SELECT--round_num-0--deck-RED--stake-WHITE"
+        load_fixture(client, "gamestate", fixture_name)
+        api(client, "skip", {})
+        api(client, "skip", {})
+        gamestate = api(client, "select", {})["result"]
+        assert gamestate["blinds"]["boss"]["status"] == "CURRENT"
+        assert gamestate["blinds"]["boss"]["disabled"] is False
+        gamestate = api(client, "add", {"key": "j_chicot"})["result"]
+        assert gamestate["blinds"]["boss"]["disabled"] is True
 
     def test_blinds_progession_extraction(self, client: httpx.Client) -> None:
         """Test blind extraction after one completed blind."""

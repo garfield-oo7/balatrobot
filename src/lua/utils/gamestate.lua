@@ -623,6 +623,7 @@ function gamestate.get_blinds_info()
       score = 0,
       tag_name = "",
       tag_effect = "",
+      disabled = false,
     },
   }
 
@@ -703,6 +704,18 @@ function gamestate.get_blinds_info()
     if blind_states.Boss then
       blinds.boss.status = convert_status_to_enum(blind_states.Boss)
     end
+
+    -- Live disabled state: true only while THIS boss is the blind being played
+    -- (G.GAME.blind is that boss and was disabled, e.g. a Joker sold under Verdant Leaf,
+    -- Luchador, Chicot). set_blind() resets disabled for each new blind and defeat()
+    -- clears the name, so the flag never carries into the next ante.
+    local live = G.GAME.blind
+    blinds.boss.disabled = (
+      blind_states.Boss == "Current"
+      and live ~= nil
+      and live.name == boss_blind.name
+      and live.disabled == true
+    ) or false
   else
     -- Fallback if boss blind not yet determined
     blinds.boss.name = "Boss Blind"
